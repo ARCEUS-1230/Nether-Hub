@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr" data-theme="nether">
 <head>
-    <meta name="google-site-verification" content="EkRfhoqaaY3iWwRSi8G57ebHUWMlqwI48DA5V-0OG9k" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NetherHub - La plateforme Minecraft Ultime</title>
@@ -275,7 +274,7 @@
 
             <div class="user-actions">
                 <div id="authButtons">
-                    <button class="btn-mc btn-mc-green" onclick="openModal('authModal')">
+                    <button class="btn-mc btn-mc-green" type="button" onclick="openModal('authModal')">
                         <i class="fa-solid fa-user"></i> <span data-i18n="loginBtn">Connexion</span>
                     </button>
                 </div>
@@ -543,7 +542,6 @@
             <div class="tabs-header">
                 <button class="tab-btn active" id="tabLogin" onclick="switchAuthTab('login')" data-i18n="tabLogin">Connexion</button>
                 <button class="tab-btn" id="tabRegister" onclick="switchAuthTab('register')" data-i18n="tabRegister">Inscription</button>
-                <button class="tab-btn" id="tabMicrosoft" onclick="switchAuthTab('microsoft')">Microsoft</button>
             </div>
 
             <form id="formLogin" onsubmit="handleLoginSubmit(event)">
@@ -560,16 +558,6 @@
                 <div class="form-group"><label data-i18n="lblConfirmPass">Confirmer le mot de passe</label><input type="password" id="regConfirmPass" required placeholder="••••••••"></div>
                 <button type="submit" class="btn-mc btn-mc-green" style="width: 100%; justify-content: center;" data-i18n="btnRegisterSubmit">S'inscrire</button>
             </form>
-
-            <div id="formMicrosoft" style="display: none; text-align: center; padding: 10px 0;">
-                <div class="modal-title" style="color:var(--mc-red); margin-bottom: 20px;">OFFICIEL MICROSOFT</div>
-                <div style="margin-bottom: 25px;">
-                    <i class="fa-brands fa-microsoft" style="font-size: 3rem; color: #00a4ef;"></i>
-                </div>
-                <button class="btn-mc btn-mc-green" style="width: 100%; justify-content: center; padding: 14px; font-size: 0.75rem;" onclick="handleMicrosoftAuth()">
-                    CONNEXION MICROSOFT
-                </button>
-            </div>
         </div>
     </div>
 
@@ -777,7 +765,6 @@
             document.querySelectorAll('.tabs-header .tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('formLogin').style.display = 'none';
             document.getElementById('formRegister').style.display = 'none';
-            document.getElementById('formMicrosoft').style.display = 'none';
 
             if (tab === 'login') {
                 document.getElementById('tabLogin').classList.add('active');
@@ -785,9 +772,6 @@
             } else if (tab === 'register') {
                 document.getElementById('tabRegister').classList.add('active');
                 document.getElementById('formRegister').style.display = 'block';
-            } else if (tab === 'microsoft') {
-                document.getElementById('tabMicrosoft').classList.add('active');
-                document.getElementById('formMicrosoft').style.display = 'block';
             }
         }
 
@@ -840,14 +824,6 @@
                 closeModal('authModal');
                 showToast(`Compte créé pour ${u} !`);
             }
-        }
-
-        function handleMicrosoftAuth() {
-            currentUser = { username: "MinecraftPlayer", avatar: "https://mc-heads.net/avatar/Steve/64", bio: "Connecté via Microsoft.", achievements: ['myAchPionnier'] };
-            localStorage.setItem('netherhub_user', JSON.stringify(currentUser));
-            updateUserUI();
-            closeModal('authModal');
-            showToast("Connexion Microsoft effectuée !");
         }
 
         function openProfileCard(username) {
@@ -1496,7 +1472,7 @@
                         <i class="fa-solid fa-right-from-bracket logout-door-btn" title="Déconnexion" onclick="logout()"></i>
                     </div>`;
             } else {
-                area.innerHTML = `<button class="btn-mc btn-mc-green" onclick="openModal('authModal')"><i class="fa-solid fa-user"></i> <span data-i18n="loginBtn">${i18nData[currentLang].loginBtn}</span></button>`;
+                area.innerHTML = `<button class="btn-mc btn-mc-green" type="button" onclick="openModal('authModal')"><i class="fa-solid fa-user"></i> <span data-i18n="loginBtn">${i18nData[currentLang].loginBtn}</span></button>`;
             }
         }
 
@@ -1513,3 +1489,4 @@
     </script>
 </body>
 </html>
+        
