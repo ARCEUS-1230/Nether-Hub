@@ -231,6 +231,7 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: #ccc; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; background: #050202; border: 2px solid var(--mc-border); color: white; border-radius: 4px; }
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { opacity: 0.5; cursor: not-allowed; background: #1a1a1a; }
 
         .tabs-header { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #3d1414; }
         .tab-btn { padding: 8px 12px; background: none; border: none; color: #888; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
@@ -500,7 +501,7 @@
         </div>
     </div>
 
-    <!-- MODAL PUBLICATION -->
+    <!-- MODAL PUBLICATION / EDITION -->
     <div class="modal-overlay" id="uploadModal">
         <div class="modal-card">
             <span class="modal-close" onclick="closeModal('uploadModal')">&times;</span>
@@ -1078,16 +1079,26 @@
                 return;
             }
 
+            const isAdmin = currentUser && currentUser.username === "ARCEUS_1230";
+
             data.forEach(item => {
                 const isFav = favorites.includes(item.id);
                 const mainImg = (item.images && item.images.length > 0) ? item.images[0] : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500';
                 const isMyPost = currentUser && item.author === currentUser.username;
                 const displayRating = calculateAverageRating(item.ratings);
 
-                let editBtnHtml = isMyPost ? `
-                    <button class="btn-mc" style="font-size:0.55rem; padding:4px 8px; background:#0055aa; border-color:#0077ff;" onclick="event.stopPropagation(); editMyPost(${item.id})">
-                        <i class="fa-solid fa-pen"></i> ${currentLang === 'fr' ? 'Modifier' : 'Edit'}
-                    </button>` : '';
+                let editBtnHtml = '';
+                if (isMyPost) {
+                    editBtnHtml = `
+                        <button class="btn-mc" style="font-size:0.55rem; padding:4px 8px; background:#0055aa; border-color:#0077ff;" onclick="event.stopPropagation(); editMyPost(${item.id})">
+                            <i class="fa-solid fa-pen"></i> ${currentLang === 'fr' ? 'Modifier' : 'Edit'}
+                        </button>`;
+                } else if (isAdmin) {
+                    editBtnHtml = `
+                        <button class="btn-mc" style="font-size:0.55rem; padding:4px 8px; background:#a86b00; border-color:#d48800;" title="Modifier photo et lien (Admin)" onclick="event.stopPropagation(); editMyPost(${item.id})">
+                            <i class="fa-solid fa-user-gear"></i> Modif Admin
+                        </button>`;
+                }
 
                 grid.innerHTML += `
                     <div class="card">
@@ -1305,9 +1316,22 @@
             document.getElementById('editItemId').value = '';
             document.getElementById('uploadModalTitle').innerText = i18nData[currentLang].modalUploadTitle;
             document.getElementById('uploadSubmitBtn').innerText = i18nData[currentLang].btnPublishSubmit;
-            document.getElementById('upTitle').value = '';
+            
+            const upTitle = document.getElementById('upTitle');
+            const upType = document.getElementById('upType');
+            const upVersion = document.getElementById('upVersion');
+            const upLoader = document.getElementById('upLoader');
+            const upDesc = document.getElementById('upDesc');
+
+            upTitle.disabled = false;
+            upType.disabled = false;
+            upVersion.disabled = false;
+            upLoader.disabled = false;
+            upDesc.disabled = false;
+
+            upTitle.value = '';
             document.getElementById('upImg').value = '';
-            document.getElementById('upDesc').value = '';
+            upDesc.value = '';
             document.getElementById('upLink').value = '';
             tempUploadedImages = [];
             openModal('uploadModal');
@@ -1317,17 +1341,41 @@
             const item = items.find(i => i.id === id);
             if(!item) return;
 
+            const isAdmin = currentUser && currentUser.username === "ARCEUS_1230";
+            const isOwner = currentUser && item.author === currentUser.username;
+
             document.getElementById('editItemId').value = item.id;
-            document.getElementById('uploadModalTitle').innerText = currentLang === 'fr' ? "MODIFIER MA PUBLICATION" : "EDIT MY PUBLICATION";
+            
+            if (isAdmin && !isOwner) {
+                document.getElementById('uploadModalTitle').innerText = currentLang === 'fr' ? "ÉDITION ADMIN (IMAGE & LIEN SEULEMENT)" : "ADMIN EDIT (IMAGE & LINK ONLY)";
+            } else {
+                document.getElementById('uploadModalTitle').innerText = currentLang === 'fr' ? "MODIFIER MA PUBLICATION" : "EDIT MY PUBLICATION";
+            }
+            
             document.getElementById('uploadSubmitBtn').innerText = currentLang === 'fr' ? "Enregistrer les modifications" : "Save Changes";
             
-            document.getElementById('upTitle').value = item.title;
-            document.getElementById('upType').value = item.type;
-            document.getElementById('upVersion').value = item.version;
-            document.getElementById('upLoader').value = item.loader;
+            const upTitle = document.getElementById('upTitle');
+            const upType = document.getElementById('upType');
+            const upVersion = document.getElementById('upVersion');
+            const upLoader = document.getElementById('upLoader');
+            const upDesc = document.getElementById('upDesc');
+
+            upTitle.value = item.title;
+            upType.value = item.type;
+            upVersion.value = item.version;
+            upLoader.value = item.loader;
             document.getElementById('upImg').value = item.images ? item.images.join(', ') : '';
-            document.getElementById('upDesc').value = item.desc;
+            upDesc.value = item.desc;
             document.getElementById('upLink').value = item.link;
+
+            // Si c'est l'admin qui édite la publication de quelqu'un d'autre, on verrouille le reste
+            const disableOthers = isAdmin && !isOwner;
+            upTitle.disabled = disableOthers;
+            upType.disabled = disableOthers;
+            upVersion.disabled = disableOthers;
+            upLoader.disabled = disableOthers;
+            upDesc.disabled = disableOthers;
+
             tempUploadedImages = [];
 
             openModal('uploadModal');
@@ -1345,23 +1393,31 @@
                 finalImages = imgUrlInput.split(',').map(url => url.trim()).filter(url => url.length > 0);
             }
 
-            if (finalImages.length === 0) {
-                finalImages = ["https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500"];
-            }
-
             if (editId) {
                 const item = items.find(i => i.id == editId);
                 if (item) {
-                    item.title = document.getElementById('upTitle').value;
-                    item.type = document.getElementById('upType').value;
-                    item.version = document.getElementById('upVersion').value;
-                    item.loader = document.getElementById('upLoader').value;
-                    item.desc = document.getElementById('upDesc').value;
+                    const isAdmin = currentUser && currentUser.username === "ARCEUS_1230";
+                    const isOwner = currentUser && item.author === currentUser.username;
+
+                    // L'admin modifiant un tiers ne met à jour QUE l'image et le lien
+                    if (!isAdmin || isOwner) {
+                        item.title = document.getElementById('upTitle').value;
+                        item.type = document.getElementById('upType').value;
+                        item.version = document.getElementById('upVersion').value;
+                        item.loader = document.getElementById('upLoader').value;
+                        item.desc = document.getElementById('upDesc').value;
+                    }
+
                     item.link = document.getElementById('upLink').value;
-                    if(tempUploadedImages.length > 0 || imgUrlInput) item.images = finalImages;
+                    if (finalImages.length > 0) {
+                        item.images = finalImages;
+                    }
                     showToast("Publication modifiée avec succès !");
                 }
             } else {
+                if (finalImages.length === 0) {
+                    finalImages = ["https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500"];
+                }
                 const newItem = {
                     id: Date.now(),
                     title: document.getElementById('upTitle').value,
@@ -1489,4 +1545,3 @@
     </script>
 </body>
 </html>
-        
